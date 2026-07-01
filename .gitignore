@@ -2,7 +2,7 @@
 /dist
 /node_modules
 /build
-.history
+/.history
 # Logs
 logs
 *.log
@@ -41,6 +41,9 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 .env.local
+.env.development
+.env.production
+.env.*
 
 # temp directory
 .temp
