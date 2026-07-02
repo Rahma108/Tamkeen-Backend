@@ -25,7 +25,7 @@ export class LoginDTO {
   @IsEmail()
   @IsNotEmpty()
   email!: string;
-
+ 
   @IsStrongPassword()
   password!: string;
 
@@ -37,11 +37,11 @@ export class SignupDTO extends LoginDTO {
   username!: string;
 
   @ValidateIf((o) => o.password !== undefined)
-  @IsMatch(['password'], { message: 'Fail' })
+  @IsMatch<string>(['password'], { message: 'Password do not match with confirmPassword' })
   confirmPassword!: string;
 
   @IsOptional()
-@IsString()
+  @IsString()
   phone?: string;
 }
 
