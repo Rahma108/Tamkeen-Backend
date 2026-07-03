@@ -54,8 +54,7 @@ export class EmailService {
 
   emailTemplate = ({
   code,
-  title = "Verify Account",
-  logoUrl = "YOUR_PUBLIC_LOGO_URL",
+  title = "Verify Account"
 }: {
   code: number;
   title?: string;
@@ -84,10 +83,14 @@ style="background:#1B1646;border-radius:28px;overflow:hidden;">
 <td align="center" style="padding:45px 20px 25px;">
 
 <img
-src="${logoUrl}"
-alt="Tamkeen"
-width="160"
-style="display:block;border:0;outline:none;text-decoration:none;">
+src="https://raw.githubusercontent.com/Rahma108/Tamkeen-Backend/main/public/logo.png"
+alt="Tamkeen Logo"
+style="
+display:block;
+width:320px;
+max-width:90%;
+height:auto;
+margin:0 auto;">
 
 <div style="
 margin-top:15px;
@@ -140,7 +143,7 @@ font-size:20px;
 color:#555;">
 
 This code is valid for
-<strong>10 minutes</strong>.
+<strong>2 minutes</strong>.
 
 </p>
 

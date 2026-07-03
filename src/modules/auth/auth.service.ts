@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { ConfirmEmailDTO, LoginDTO, ResendConfirmEmailDto, SignupDTO } from './dto/create-auth.dto';
+import { ConfirmEmailDTO, LoginDTO, ResendConfirmEmailDto, ResetForgotPasswordDTO, SignupDTO, VerifyEmailDTO, VerifyForgotPasswordDTO } from './dto/create-auth.dto';
 import { ProviderEnum } from 'src/common/enum/user.enum';
 import { emailEmitter } from 'src/common/events';
 import { EmailEnum } from 'src/common/enum';
@@ -21,7 +21,7 @@ export class AuthService {
     private  readonly emailService: EmailService,
     private readonly userRepository: UserRepository,
     private readonly redis: CacheService,
-    private readonly encryption: EncryptionSecurity
+    private readonly encryption: EncryptionSecurity ,
   ) {}
     private verifyEmailOtp = async({ title   , subject=EmailEnum.confirmEmail ,  email }
         :{title:string , subject:EmailEnum , email:string } ):Promise<void>=>{
@@ -251,5 +251,53 @@ export class AuthService {
 
 
 }
+
+
+       // Forgot Password.
+        
+    async  requestForgotPasswordCode({email}:VerifyEmailDTO){
+            const account = await this.userRepository.findOne({
+            projection :"email" ,
+            filter:{email , confirmEmail:{ $ne: null } , Provider:ProviderEnum.SYSTEM} 
+        })
+        if(!account){
+            throw new  NotFoundException("Fail to find Match account ❌")
+        }
+        emailEmitter.emit("sendEmail" ,async ()=>{
+                await this.verifyEmailOtp({title : "Forgot Password" , subject:EmailEnum.ForgotPassword , email })
+            })
+    return ;
+}
+async verifyForgotPasswordCode ({email , otp }:VerifyForgotPasswordDTO ):Promise<void>{
+    const hashOtp = await this.redis.get(this.redis.otpKey({email , type:EmailEnum.ForgotPassword }))
+    if(!hashOtp){
+        throw  new NotFoundException("Expired OTP ❌")
+    }
+    if(!await this.securityService.compareHash({plaintext: otp , cipherText:hashOtp} )){
+        throw new ConflictException("Invalid OTP 😊")
+    }
+    return ;
+}
+
+    async  resetForgotPasswordCode({email , otp , password}:ResetForgotPasswordDTO ){
+    await this.verifyForgotPasswordCode({email ,otp })
+    const account = await this.userRepository.findOneAndUpdate({
+        filter :{email , confirmEmail:{ $ne: null } , Provider:ProviderEnum.SYSTEM } ,
+        update:{
+            password:await this.securityService.generateHash({plaintext :password}),
+            changeCredentialTime:new Date() // All Logout
+        }
+
+    })
+    if(!account){
+        throw  new NotFoundException("Fail to find Match account ❌")
+    }
+    Promise.allSettled([
+            await this.redis.deleteKeys(await this.redis.keys((this.redis.otpKey({email , type:EmailEnum.ForgotPassword })))),
+            await this.redis.deleteKeys(await this.redis.keys(this.redis.baseRevokeTokenKey(account._id.toString())))
+    ])
+    return ;
+}
+
 
 }

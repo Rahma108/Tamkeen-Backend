@@ -17,8 +17,10 @@ export class ResendConfirmEmailDto  {
 }
 
 export class ConfirmEmailDTO extends ResendConfirmEmailDto{
-  @Matches(/^d{6}$/)
+  @Matches(/^\d{6}$/)
   otp! : string;
+
+
 
 }
 export class LoginDTO {
@@ -51,4 +53,29 @@ export class SignupWithGoogleDTO  {
   @IsNotEmpty()
   idToken !:string;
 
+}
+
+
+export class VerifyEmailDTO {
+  @IsEmail({}, { message: 'Please enter your email' })
+  email!: string;
+}
+
+export class VerifyForgotPasswordDTO extends VerifyEmailDTO {
+  @Matches(/^\d{6}$/, {
+    message: 'OTP must be 6 digits',
+  })
+  otp!: string;
+}
+export class ResetForgotPasswordDTO extends ConfirmEmailDTO {
+  @IsStrongPassword({}, {
+    message: 'Password is not strong enough',
+  })
+  password!: string;
+
+  @ValidateIf((o) => o.password !== undefined)
+  @IsMatch<string>(['password'], {
+    message: 'Passwords do not match',
+  })
+  confirmPassword!: string;
 }

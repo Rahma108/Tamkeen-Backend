@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Patch,HttpCode, HttpStatus, UseInterceptors, Req, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { ConfirmEmailDTO, LoginDTO, ResendConfirmEmailDto, SignupDTO, SignupWithGoogleDTO } from './dto/create-auth.dto';
+import { ConfirmEmailDTO, LoginDTO, ResendConfirmEmailDto, ResetForgotPasswordDTO, SignupDTO, SignupWithGoogleDTO, VerifyEmailDTO } from './dto/create-auth.dto';
 import { IUser } from 'src/common/interface';
 import { LoginResponse } from './entities/auth.entity';
 import { WatchInterceptor } from 'src/common/interceptor';
@@ -52,4 +52,34 @@ export class AuthController {
     res.status(status)
     return account;
   }
+
+
+
+
+  // Forget Password 
+// ================== Forget Password ==================
+
+    @Post('request-forgot-password-code')
+    @HttpCode(HttpStatus.CREATED)
+    async requestForgotPasswordCode(
+      @Body() body: VerifyEmailDTO,
+    ): Promise<void> {
+      await this.authService.requestForgotPasswordCode(body);
+    }
+
+    @Patch('verify-forgot-password-code')
+    @HttpCode(HttpStatus.OK)
+    async verifyForgotPasswordCode(
+      @Body() body: ConfirmEmailDTO,
+    ): Promise<void> {
+      await this.authService.verifyForgotPasswordCode(body);
+    }
+
+    @Patch('reset-forgot-password-code')
+    @HttpCode(HttpStatus.OK)
+    async resetForgotPasswordCode(
+      @Body() body: ResetForgotPasswordDTO,
+    ): Promise<void> {
+      await this.authService.resetForgotPasswordCode(body);
+    }
 }
