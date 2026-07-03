@@ -45,8 +45,6 @@ export class User implements IUser {
   phone?: string;
   @Prop({ type: String, required: false })
   profileImage?: string;
-  @Prop({ type: [String], required: false })
-  coverImages?: string[];
   @Prop({ type: [], required: false })
   // friends:[{type : Types.ObjectId , ref :"User"}],
   @Prop({ type: Date, required: false })

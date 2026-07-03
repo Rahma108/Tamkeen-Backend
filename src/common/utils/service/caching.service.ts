@@ -33,10 +33,7 @@ export class CacheService {
   ) {
     this.handleEvents();
   }
-  getCacheKey(value : string, userId?:string  ){
-  return userId ?  `Cart::${value}::${userId.toString()}` : `Cart::${value}`;
 
-}
   private handleEvents() {
     this.client.on('connect', () =>
       console.log(`REDIS_DB CONNECTED SUCCESSFULLY ✔️`),
@@ -184,7 +181,6 @@ export class CacheService {
   public update = async ({ key, value, ttl }: SetParams): Promise<any> => {
     try {
       if (!(await this.exists(key))) return 0;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       return this.set({ key, value, ttl });
     } catch (error) {
       console.log(`Fail in redis update Operations ${error}`);
@@ -203,7 +199,6 @@ export class CacheService {
 
   // Firebase
   FCMKey(userId: string | Types.ObjectId) {
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     return `user:FCM:${userId}`;
   }
   async addFCM(userId: string | Types.ObjectId, FCMToken: string) {

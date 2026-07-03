@@ -12,7 +12,6 @@ export interface IUser {
   role?: RoleEnum;
   phone?: string;
   profileImage?: string;
-  coverImages?: string[];
   createdAt?: Date;
   updatedAt?: Date;
   changeCredentialTime?: Date;

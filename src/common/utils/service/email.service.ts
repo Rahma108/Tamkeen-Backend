@@ -52,131 +52,185 @@ export class EmailService {
     }
   }
 
-   emailTemplate = ({ code, title = "Verification Code" } : { code: number; title: string }) => {
-      return `
-    <!DOCTYPE html>
-    <html lang="en">
+  emailTemplate = ({
+  code,
+  title = "Verify Account",
+  logoUrl = "YOUR_PUBLIC_LOGO_URL",
+}: {
+  code: number;
+  title?: string;
+  logoUrl?: string;
+}) => {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${title}</title>
+</head>
 
-    <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
-    </head>
+<body style="margin:0;padding:30px;background:#EEF1F7;font-family:Arial,Helvetica,sans-serif;">
 
-    <body style="margin:0;padding:30px;background:#f3f4f8;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" cellspacing="0" cellpadding="0">
+<tr>
+<td align="center">
 
-    <table width="100%" cellspacing="0" cellpadding="0">
-    <tr>
-    <td align="center">
+<table width="650" cellspacing="0" cellpadding="0"
+style="background:#1B1646;border-radius:28px;overflow:hidden;">
 
-    <table width="620" cellspacing="0" cellpadding="0"
-    style="background:#1B1646;border-radius:22px;overflow:hidden;">
+<!-- HEADER -->
+<tr>
+<td align="center" style="padding:45px 20px 25px;">
 
-    <!-- Header -->
-    <tr>
-    <td align="center" style="padding:40px 30px 20px;">
+<img
+src="${logoUrl}"
+alt="Tamkeen"
+width="160"
+style="display:block;border:0;outline:none;text-decoration:none;">
 
-    <img
-    src="YOUR_LOGO_URL"
-    width="170"
-    alt="Tamkeen Logo"
-    style="display:block;margin-bottom:20px;">
+<div style="
+margin-top:15px;
+color:#27F2B1;
+font-size:24px;
+font-weight:bold;">
+Your Journey Starts Here
+</div>
 
-    </td>
-    </tr>
+</td>
+</tr>
 
-    <!-- White Card -->
-    <tr>
-    <td style="padding:0 30px 40px;">
+<!-- CARD -->
+<tr>
+<td style="padding:0 35px 40px;">
 
-    <table width="100%" cellspacing="0" cellpadding="0"
-    style="background:#ffffff;border-radius:24px;padding:40px;">
+<table width="100%"
+cellspacing="0"
+cellpadding="0"
+style="
+background:#ffffff;
+border-radius:28px;">
 
-    <tr>
-    <td align="center">
+<tr>
 
-    <h1 style="
-    margin:0;
-    color:#1B1646;
-    font-size:30px;
-    font-weight:bold;">
-    ${title}
-    </h1>
+<td align="center"
+style="padding:55px 45px;">
 
-    <p style="
-    margin:18px 0 35px;
-    font-size:16px;
-    line-height:28px;
-    color:#666;">
-    Use the following verification code to complete your request.<br>
-    This code is valid for <strong>10 minutes</strong>.
-    </p>
+<h1 style="
+margin:0;
+font-size:50px;
+color:#1B1646;
+font-weight:bold;">
+${title}
+</h1>
 
-    <!-- OTP -->
-    <table cellspacing="0" cellpadding="0"
-    style="margin:auto;background:#1B1646;border-radius:18px;">
+<p style="
+margin:28px 0 10px;
+font-size:20px;
+color:#555;
+line-height:32px;">
 
-    <tr>
+Use the following verification code to complete your request.
 
-    <td style="
-    padding:18px 35px;
-    font-size:42px;
-    font-weight:bold;
-    letter-spacing:14px;
-    color:#19F2A4;">
-    ${code}
-    </td>
+</p>
 
-    </tr>
+<p style="
+margin:0 0 45px;
+font-size:20px;
+color:#555;">
 
-    </table>
+This code is valid for
+<strong>10 minutes</strong>.
 
-    <p style="
-    margin-top:35px;
-    font-size:14px;
-    color:#777;
-    line-height:24px;">
-    🔒 Never share this verification code with anyone.
-    </p>
+</p>
 
-    </td>
-    </tr>
+<table
+cellspacing="0"
+cellpadding="0"
+style="
+background:#1B1646;
+border-radius:20px;">
 
-    </table>
+<tr>
 
-    </td>
-    </tr>
+<td
+style="
+padding:25px 55px;
+font-size:58px;
+font-weight:bold;
+letter-spacing:16px;
+color:#22F3AA;">
 
-    <!-- Footer -->
-    <tr>
-    <td align="center"
-    style="
-    padding:30px;
-    color:#19F2A4;
-    font-size:28px;
-    font-weight:bold;">
+${code}
 
-    Tamkeen
+</td>
 
-    <div style="
-    margin-top:8px;
-    font-size:15px;
-    font-weight:normal;
-    color:#d6d6d6;">
-    Your Journey Starts Here
-    </div>
+</tr>
 
-    </td>
-    </tr>
+</table>
 
-    </table>
+<div
+style="
+margin-top:40px;
+background:#F1FFFA;
+padding:22px;
+border-radius:16px;
+font-size:18px;
+color:#444;">
 
-    </td>
-    </tr>
-    </table>
+🔒 Never share this verification code with anyone.
 
-    </body>
-    </html>
-    `;
-    };
+</div>
+
+</td>
+
+</tr>
+
+</table>
+
+</td>
+
+</tr>
+
+<!-- FOOTER -->
+
+<tr>
+
+<td align="center"
+style="padding:35px;">
+
+<div
+style="
+font-size:38px;
+font-weight:bold;
+color:#20F2A7;">
+
+TAMKEEN
+
+</div>
+
+<div
+style="
+margin-top:12px;
+font-size:18px;
+color:#E0E0E0;">
+
+Your Journey Starts Here
+
+</div>
+
+</td>
+
+</tr>
+
+</table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
+`;
+};
 }

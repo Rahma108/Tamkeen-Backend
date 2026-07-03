@@ -13,6 +13,7 @@ export class AuthController {
   async signup(
     @Body() body: SignupDTO,
   ) :Promise<IUser>{
+    console.log(body);
     const user = await this.authService.signup(body);
     return user;
   }
