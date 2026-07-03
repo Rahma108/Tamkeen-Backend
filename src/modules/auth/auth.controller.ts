@@ -1,41 +1,54 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Patch,HttpCode, HttpStatus, UseInterceptors, Req, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
-
+import { ConfirmEmailDTO, LoginDTO, ResendConfirmEmailDto, SignupDTO, SignupWithGoogleDTO } from './dto/create-auth.dto';
+import { IUser } from 'src/common/interface';
+import { LoginResponse } from './entities/auth.entity';
+import { WatchInterceptor } from 'src/common/interceptor';
+import type { Request, Response } from 'express';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+  @Post('signup')
 
-  @Post("signup")
-  signup(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+  async signup(
+    @Body() body: SignupDTO,
+  ) :Promise<IUser>{
+    const user = await this.authService.signup(body);
+    return user;
   }
-
-
+  @UseInterceptors(WatchInterceptor)
   @HttpCode(HttpStatus.OK)
-  @Post("login")
-  login(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+  @Post('login')
+  async login (
+    @Req() req : Request,
+    @Body()
+    body: LoginDTO,
+  ) : Promise<LoginResponse>{
+    console.log({lang : req.headers['accept-language']})
+    const credentials = await this.authService.login(body , `${req.protocol}://${req.get('host')}`)
+    return credentials;
+  }
+  @Patch('confirm-email')
+  async confirmEmail(@Body() body:ConfirmEmailDTO):Promise<void>{
+      await this.authService.confirmEmail(body)
+      return ;
   }
 
-  @Get()
-  findAll() {
-    return this.authService.findAll();
+  @Patch('/resend-confirm-email')
+  async reSendConfirmEmail(@Body() body:ResendConfirmEmailDto):Promise<void>{
+      await this.authService.reSendConfirmEmail(body)
+      return ;
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+  // Google 
+  @Post('signupWithGoogle')
+  async signupWithGoogle(
+    @Body() body: SignupWithGoogleDTO,
+    @Req() req:Request,
+    @Res({passthrough:true}) res : Response
+  )  :Promise<LoginResponse> {
+    const {account , status} = await this.authService.signupWithGmail(body.idToken ,`${req.protocol}://${req.get('host')}`);
+    res.status(status)
+    return account;
   }
 }

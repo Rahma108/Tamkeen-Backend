@@ -45,6 +45,10 @@ export class User implements IUser {
   phone?: string;
   @Prop({ type: String, required: false })
   profileImage?: string;
+  @Prop({ type: [String], required: false })
+  coverImages?: string[];
+  @Prop({ type: [], required: false })
+  // friends:[{type : Types.ObjectId , ref :"User"}],
   @Prop({ type: Date, required: false })
   DOB?: Date;
   @Prop({ type: Date, required: false })
@@ -67,65 +71,65 @@ export class User implements IUser {
 
 export const userMongooseSchema = SchemaFactory.createForClass(User);
 export const UserModel = MongooseModule.forFeatureAsync([
-    {
-        name: User.name,
+  {
+    name: User.name,
 
-        useFactory: () => {
-        userMongooseSchema.pre(["find", "findOne"], function () {
+    useFactory: () => {
+      userMongooseSchema.pre(["find", "findOne"], function () {
 
-            if (this.getQuery().paranoid == false) {
-            this.setQuery({
-                ...this.getQuery(),
-            });
-            } else {
-            this.setQuery({
-                ...this.getQuery(),
-                deletedAt: { $exists: false }
-            });
-            }
+        if (this.getQuery().paranoid == false) {
+          this.setQuery({
+            ...this.getQuery(),
+          });
+        } else {
+          this.setQuery({
+            ...this.getQuery(),
+            deletedAt: { $exists: false }
+          });
+        }
 
-        });
-        userMongooseSchema.pre(["updateOne", "findOneAndUpdate"], function () {
+      });
+      userMongooseSchema.pre(["updateOne", "findOneAndUpdate"], function () {
 
-            const update = this.getUpdate() as HydratedDocument<IUser>;
+        const update = this.getUpdate() as HydratedDocument<IUser>;
 
-            if (update.deletedAt) {
-            this.getQuery().paranoid = true;
+        if (update.deletedAt) {
+          this.getQuery().paranoid = true;
 
-            this.setUpdate({
-                ...this.getUpdate(),
-                $unset: { restoredAt: 1 }
-            });
-            }
+          this.setUpdate({
+            ...this.getUpdate(),
+            $unset: { restoredAt: 1 }
+          });
+        }
 
-            if (update.restoredAt) {
-            this.setQuery({
-                ...this.getQuery(),
-                paranoid: false,
-                deletedAt: { $exists: true }
-            });
-            }
+        if (update.restoredAt) {
+          this.setQuery({
+            ...this.getQuery(),
+            paranoid: false,
+            deletedAt: { $exists: true }
+          });
+        }
 
-        });
+    });
 
-        userMongooseSchema.pre(["deleteOne", "findOneAndDelete"], function () {
+      userMongooseSchema.pre(["deleteOne", "findOneAndDelete"], function () {
 
-            if (this.getQuery().force == true ) {
-    
+        if (this.getQuery().force == true ) {
+  
 
-            this.setQuery({
-                ...this.getQuery(),
-            });
-            }else{
-            this.setQuery({
-                ...this.getQuery(),
-                deletedAt: { $exists: true }
-            });
-            }
+          this.setQuery({
+            ...this.getQuery(),
+          });
+        }else{
+          this.setQuery({
+            ...this.getQuery(),
+            deletedAt: { $exists: true }
+          });
+        }
 
-        });
+    });
 
-        return userMongooseSchema;
-        },
+    return userMongooseSchema;
     },
+  },
 ]);
