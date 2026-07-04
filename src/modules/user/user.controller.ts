@@ -1,16 +1,39 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+
+import { ChangeLanguageDto, UpdateUserDto } from './dto/update-user.dto';
+import { RoleEnum } from 'src/common/enum/user.enum';
+import { Auth, User } from 'src/common/decorator';
+import type { HUserDocument } from 'src/common/model';
+
+import type { IAuthReq } from 'src/common/interface/auth.interface';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  @Auth([RoleEnum.USER ])
+  @Get()
+  profile(
+    @Req() req: IAuthReq,
+    @User() user: HUserDocument,
+  ) {
+    return {
+      message: 'Done',
+      data: {
+        language: req.lang,
+        user,
+      },
+    };
   }
+  @Patch('language')
+    @Auth([RoleEnum.USER])
+    changeLanguage(
+      @Body() dto: ChangeLanguageDto,
+      @User() user: HUserDocument,
+    ) {
+      return this.userService.changeLanguage(user, dto);
+    }
 
   @Get()
   findAll() {

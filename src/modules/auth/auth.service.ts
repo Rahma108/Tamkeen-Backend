@@ -2,14 +2,16 @@ import { BadRequestException, ConflictException, HttpStatus, Injectable, NotFoun
 import { ConfirmEmailDTO, LoginDTO, ResendConfirmEmailDto, ResetForgotPasswordDTO, SignupDTO, VerifyEmailDTO, VerifyForgotPasswordDTO } from './dto/create-auth.dto';
 import { ProviderEnum } from 'src/common/enum/user.enum';
 import { emailEmitter } from 'src/common/events';
-import { EmailEnum } from 'src/common/enum';
-import { IUser } from 'src/common/interface';
+import { EmailEnum, LangEnum } from 'src/common/enum';
+import { IResponse, IUser } from 'src/common/interface';
 import { ConfigService } from '@nestjs/config';
 import { CacheService, EmailService, EncryptionSecurity, SecurityService, TokenService } from 'src/common/utils/service';
 import { UserRepository } from 'src/common/repository/user.repository';
 import { createNumberOtp } from 'src/common/utils/otp';
 import { LoginResponse } from './entities/auth.entity';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
+import { Translator } from 'src/common/i18n/translator';
+import { Language } from 'src/common/i18n/language.type';
 
 
 @Injectable()
@@ -66,21 +68,27 @@ export class AuthService {
 }
 
 //Confirm Email with otp..
-    public  confirmEmail = async({otp , email} : ConfirmEmailDTO ) : Promise<void>=>{
+    public  confirmEmail = async({otp , email} : ConfirmEmailDTO  , lang: Language) : Promise<void>=>{
 
         const account = await this.userRepository.findOne({
         filter:{email , confirmEmail: { $eq: null } , provider:ProviderEnum.SYSTEM }  ,
         projection:"email"
     })
     if(!account){
-        throw  new NotFoundException("Fail to find Match account ❌")
+        throw new NotFoundException(
+            Translator.auth('ACCOUNT_NOT_FOUND', lang),
+);
     }
     const hashOtp = await this.redis.get(this.redis.otpKey({email}))
     if(!hashOtp){
-        throw new NotFoundException("Expired OTP 😊")
+        throw new NotFoundException(
+            Translator.auth('OTP_EXPIRED', lang),
+);
     }
     if(!await this.securityService.compareHash({plaintext: otp  , cipherText: hashOtp} )){
-        throw  new ConflictException("Invalid OTP ❌")
+        throw new ConflictException(
+         Translator.auth('INVALID_OTP', lang),
+);
     }
     account.confirmEmail = new Date()
     await account.save()
@@ -88,13 +96,15 @@ export class AuthService {
     return ;
     }
 
-    public reSendConfirmEmail = async({email}: ResendConfirmEmailDto):Promise<void>=>{
+    public reSendConfirmEmail = async({email}: ResendConfirmEmailDto , lang: Language):Promise<void>=>{
         const account = await this.userRepository.findOne({
         filter:{email , confirmEmail: { $eq: null } , Provider:ProviderEnum.SYSTEM }  ,
         projection:"email"
     })
     if(!account){
-        throw new  NotFoundException("Fail to find Match account ❌")
+            throw new NotFoundException(
+    Translator.auth('ACCOUNT_NOT_FOUND', lang),
+    );
     }
         // Re-Send a verification code to email after registration
     await this.verifyEmailOtp({title  : "Verify Account", subject: EmailEnum.confirmEmail , email:email })
@@ -102,135 +112,190 @@ export class AuthService {
 
 
 }
-   public async login(inputs: LoginDTO, issuer: string) :Promise<LoginResponse>{
-  const { email, password } = inputs;
+    public async login(
+    inputs: LoginDTO,
+    issuer: string,
+    lang: Language,
+    ): Promise<LoginResponse> {
+    const { email, password } = inputs;
 
-  const user = await this.userRepository.findOne({
-    filter: {
+    const user = await this.userRepository.findOne({
+        filter: {
+        email,
+        confirmEmail: { $ne: null },
+        provider: ProviderEnum.SYSTEM,
+        },
+        options: { lean: false },
+        projection: '+password',
+    });
+
+    if (!user) {
+        throw new UnauthorizedException(
+        Translator.auth('INVALID_CREDENTIALS', lang),
+        );
+    }
+    const isMatch = await this.securityService.compareHash({
+        plaintext: password,
+        cipherText: user.password,
+    });
+
+    if (!isMatch) {
+        throw new UnauthorizedException(
+        Translator.auth('INVALID_CREDENTIALS', lang),
+        );
+    }
+
+    return this.tokenService.createLoginCredentials(user, issuer);
+    }
+    public async signup(
+  data: SignupDTO,
+  lang: string,
+): Promise<IResponse<IUser>> {
+  const { username, email, password, phone } = data;
+
+  const checkUserExist = await this.userRepository.findOne({
+    filter: { email },
+    projection: "email",
+    options: { lean: true },
+  });
+
+  if (checkUserExist) {
+    throw new ConflictException(
+        Translator.auth('EMAIL_ALREADY_EXISTS', lang),
+        );
+  }
+
+  const hashedPassword = await this.securityService.generateHash({
+    plaintext: password,
+  });
+
+  const encryptedPhone = phone
+    ? this.encryption.encrypt(phone)
+    : undefined;
+
+  const user = await this.userRepository.create({
+    data: {
+      username,
       email,
-      confirmEmail: { $ne: null },
-      provider: ProviderEnum.SYSTEM,
+      password: hashedPassword,
+      phone: encryptedPhone,
     },
-    options: { lean: false },
-    projection: '+password',
   });
 
   if (!user) {
-    throw new UnauthorizedException("Invalid Login Credentials ❌");
+    throw new BadRequestException(
+        Translator.auth('USER_CREATION_FAILED', lang),
+        );
   }
 
-  const isMatch = await this.securityService.compareHash({
-    plaintext: password,
-    cipherText: user.password,
+  emailEmitter.emit("sendEmail", async () => {
+    await this.verifyEmailOtp({
+      title: "Verify Account",
+      subject: EmailEnum.confirmEmail,
+      email,
+    });
   });
 
-  if (!isMatch) {
-    throw new UnauthorizedException("Invalid Login Credentials ❌");
-  }
-
-  return this.tokenService.createLoginCredentials(user, issuer);
+  return {
+    message: Translator.auth("SIGNUP_SUCCESS",  lang as Language),
+    data: user.toJSON(),
+  };
 }
-    public async signup(data: SignupDTO): Promise<IUser> {
-        let { username, email, password , phone } = data
-        
-        const checkUserExist = await this.userRepository.findOne({
-            filter: { email },
-            projection: "email",
-            options: { lean: true }
-        })
-        
-        if (checkUserExist) {
-            throw new ConflictException("Email Exists ‼️‼️")
-        }    
-       const hashedPassword = await this.securityService.generateHash({
-  plaintext: password,
-});
-
-        const encryptedPhone = phone ? this.encryption.encrypt(phone) : undefined;
-
-        const user = await this.userRepository.create({
-        data: {
-            username,
-            email,
-            password: hashedPassword,
-            phone: encryptedPhone,
-        },
-        });
-        
-        if (!user) {
-            throw new BadRequestException("Fail To Create User ✖️")
-        }
-        
-        emailEmitter.emit("sendEmail", async () => {
-            await this.verifyEmailOtp({
-                title: "Verify Account",
-                subject: EmailEnum.confirmEmail,
-                email: email
-            })
-        })
-        
-        return user.toJSON()
-    }
 
     
     // With Google 
     
-    private async  verifyGoogleAccount(idToken : string ) : Promise<TokenPayload>{
-            const client = new OAuth2Client();
-            const ticket = await client.verifyIdToken({
-                idToken,
-                audience: this.configService.get('CLIENT_ID') , 
-            });
-            const payload = ticket.getPayload();
-            if (!payload) {
-                throw new BadRequestException('Invalid Google token');
-            }
-            console.log(payload);
-            if(!payload?.email_verified){
-            throw new  BadRequestException("Fail to verify authenticated this account with google 🫠")
+    private async verifyGoogleAccount(idToken: string): Promise<TokenPayload> {
+    const client = new OAuth2Client();
 
-            }
-            return payload
+    const ticket = await client.verifyIdToken({
+        idToken,
+        audience: this.configService.get('CLIENT_ID'),
+    });
 
+    const payload = ticket.getPayload();
 
-}
+    if (!payload) {
+        throw new BadRequestException(
+        Translator.auth('GOOGLE_TOKEN_INVALID', 'en'),
+        );
+    }
 
-    async loginWithGmail (idToken: string , issuer : string):Promise<LoginResponse>{
+    if (!payload?.email_verified) {
+        throw new BadRequestException(
+        Translator.auth('GOOGLE_ACCOUNT_NOT_VERIFIED', 'en'),
+        );
+    }
+
+    return payload;
+    }
+
+    async loginWithGmail(
+    idToken: string,
+    issuer: string,
+    ): Promise<LoginResponse> {
     if (!idToken) {
-        throw new BadRequestException( "idToken is required" );
-    }
-    const payload = await this.verifyGoogleAccount(idToken)
-    const user = await this.userRepository.findOne( {filter:{ email:payload.email as string , provider:ProviderEnum.GOOGLE } } )
-    if(!user){
-        throw  new NotFoundException( "Invalid Login Credentials .")
-
+        throw new BadRequestException(
+        Translator.auth('INVALID_TOKEN', 'en'),
+        );
     }
 
-    return await this.tokenService.createLoginCredentials(user, issuer) 
+    const payload = await this.verifyGoogleAccount(idToken);
+
+    const user = await this.userRepository.findOne({
+        filter: {
+        email: payload.email as string,
+        provider: ProviderEnum.GOOGLE,
+        },
+    });
+
+    if (!user) {
+        throw new NotFoundException(
+        Translator.auth('INVALID_CREDENTIALS', 'en'),
+        );
+    }
+
+  return await this.tokenService.createLoginCredentials(user, issuer);
 }
 
-    async signupWithGmail(idToken: string , issuer : string):Promise<{ status : number , account: LoginResponse } >{
+        async signupWithGmail(
+        idToken: string,
+        issuer: string,
+        lang: Language,
+        ): Promise<{ status: number; account: LoginResponse }> {
         if (!idToken) {
-            throw new BadRequestException("idToken is required" );
+            throw new BadRequestException(
+            Translator.auth('INVALID_TOKEN', lang),
+            );
         }
-        const payload = await this.verifyGoogleAccount(idToken)
-        const checkUserExist = await this.userRepository.findOne( {filter:{ email:payload.email as string }} )
-        if(checkUserExist){
-            // 1- User Exists in Database  And Provider == System  ==> Throw Error ..
-            if(checkUserExist.provider == ProviderEnum.SYSTEM){
-            throw new ConflictException("Account Already Exist With Different Provider ‼️")
 
-        }
-            const token = await this.tokenService.createLoginCredentials(checkUserExist, issuer);
+        const payload = await this.verifyGoogleAccount(idToken);
+
+        const checkUserExist = await this.userRepository.findOne({
+            filter: { email: payload.email as string },
+        });
+
+        if (checkUserExist) {
+            if (checkUserExist.provider == ProviderEnum.SYSTEM) {
+            throw new ConflictException(
+                Translator.auth(
+                'ACCOUNT_ALREADY_EXISTS_WITH_DIFFERENT_PROVIDER',
+                lang,
+                ),
+            );
+            }
+
+            const token = await this.tokenService.createLoginCredentials(
+            checkUserExist,
+            issuer,
+            );
+
             return {
-                    account: token,
-                    status: HttpStatus.OK,
-                    };
-
+            account: token,
+            status: HttpStatus.OK,
+            };
         }
 
-        //  3- User Not Exists ==> Create with Provider Google .
-        // New user → create + login
         const newUser = await this.userRepository.create({
             data: {
             firstName: payload.given_name || '',
@@ -239,65 +304,125 @@ export class AuthService {
             provider: ProviderEnum.GOOGLE,
             profileImage: payload.picture,
             confirmEmail: new Date(),
-            phone:""
-            }
+            phone: '',
+            },
         });
 
-        const token = await this.tokenService.createLoginCredentials(newUser, issuer);
+        const token = await this.tokenService.createLoginCredentials(
+            newUser,
+            issuer,
+        );
+
         return {
             account: token,
             status: HttpStatus.CREATED,
-            };
-
-
-}
+        };
+        }
 
 
        // Forgot Password.
         
-    async  requestForgotPasswordCode({email}:VerifyEmailDTO){
-            const account = await this.userRepository.findOne({
-            projection :"email" ,
-            filter:{email , confirmEmail:{ $ne: null } , Provider:ProviderEnum.SYSTEM} 
-        })
-        if(!account){
-            throw new  NotFoundException("Fail to find Match account ❌")
-        }
-        emailEmitter.emit("sendEmail" ,async ()=>{
-                await this.verifyEmailOtp({title : "Forgot Password" , subject:EmailEnum.ForgotPassword , email })
-            })
-    return ;
-}
-async verifyForgotPasswordCode ({email , otp }:VerifyForgotPasswordDTO ):Promise<void>{
-    const hashOtp = await this.redis.get(this.redis.otpKey({email , type:EmailEnum.ForgotPassword }))
-    if(!hashOtp){
-        throw  new NotFoundException("Expired OTP ❌")
-    }
-    if(!await this.securityService.compareHash({plaintext: otp , cipherText:hashOtp} )){
-        throw new ConflictException("Invalid OTP 😊")
-    }
-    return ;
-}
+    async requestForgotPasswordCode(
+    { email }: VerifyEmailDTO,
+    lang: Language,
+    ) {
+    const account = await this.userRepository.findOne({
+        projection: 'email',
+        filter: {
+        email,
+        confirmEmail: { $ne: null },
+        provider: ProviderEnum.SYSTEM,
+        },
+    });
 
-    async  resetForgotPasswordCode({email , otp , password}:ResetForgotPasswordDTO ){
-    await this.verifyForgotPasswordCode({email ,otp })
+    if (!account) {
+        throw new NotFoundException(
+        Translator.auth('ACCOUNT_NOT_FOUND', lang),
+        );
+    }
+
+    emailEmitter.emit('sendEmail', async () => {
+        await this.verifyEmailOtp({
+        title: 'Forgot Password',
+        subject: EmailEnum.ForgotPassword,
+        email,
+        });
+    });
+
+    return;
+    }
+    async verifyForgotPasswordCode(
+    { email, otp }: VerifyForgotPasswordDTO,
+    lang: Language,
+    ): Promise<void> {
+    const hashOtp = await this.redis.get(
+        this.redis.otpKey({ email, type: EmailEnum.ForgotPassword }),
+    );
+
+    if (!hashOtp) {
+        throw new NotFoundException(
+        Translator.auth('OTP_EXPIRED', lang),
+        );
+    }
+
+    if (
+        !(await this.securityService.compareHash({
+        plaintext: otp,
+        cipherText: hashOtp,
+        }))
+    ) {
+        throw new ConflictException(
+        Translator.auth('INVALID_OTP', lang),
+        );
+    }
+
+    return;
+    }
+
+    async resetForgotPasswordCode(
+    { email, otp, password }: ResetForgotPasswordDTO,
+    lang: Language,
+    ) {
+    await this.verifyForgotPasswordCode({ email, otp }, lang);
+
     const account = await this.userRepository.findOneAndUpdate({
-        filter :{email , confirmEmail:{ $ne: null } , Provider:ProviderEnum.SYSTEM } ,
-        update:{
-            password:await this.securityService.generateHash({plaintext :password}),
-            changeCredentialTime:new Date() // All Logout
-        }
+        filter: {
+        email,
+        confirmEmail: { $ne: null },
+        provider: ProviderEnum.SYSTEM,
+        },
+        update: {
+        password: await this.securityService.generateHash({
+            plaintext: password,
+        }),
+        changeCredentialTime: new Date(),
+        },
+    });
 
-    })
-    if(!account){
-        throw  new NotFoundException("Fail to find Match account ❌")
+    if (!account) {
+        throw new NotFoundException(
+        Translator.auth('ACCOUNT_NOT_FOUND', lang),
+        );
     }
+
     Promise.allSettled([
-            await this.redis.deleteKeys(await this.redis.keys((this.redis.otpKey({email , type:EmailEnum.ForgotPassword })))),
-            await this.redis.deleteKeys(await this.redis.keys(this.redis.baseRevokeTokenKey(account._id.toString())))
-    ])
-    return ;
-}
+        this.redis.deleteKeys(
+        await this.redis.keys(
+            this.redis.otpKey({
+            email,
+            type: EmailEnum.ForgotPassword,
+            }),
+        ),
+        ),
+        this.redis.deleteKeys(
+        await this.redis.keys(
+            this.redis.baseRevokeTokenKey(account._id.toString()),
+        ),
+        ),
+    ]);
+
+    return;
+    }
 
 
 }

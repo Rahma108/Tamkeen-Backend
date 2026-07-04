@@ -5,6 +5,7 @@ import { HUserDocument } from "../model";
 import { Socket } from "socket.io";
 export interface IAuthReq extends Request {
     credentials:{user: HUserDocument , decoded : JwtPayload}
+    lang: string;
 
 }
 

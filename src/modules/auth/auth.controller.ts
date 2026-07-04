@@ -1,85 +1,97 @@
 import { Controller, Post, Body, Patch,HttpCode, HttpStatus, UseInterceptors, Req, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ConfirmEmailDTO, LoginDTO, ResendConfirmEmailDto, ResetForgotPasswordDTO, SignupDTO, SignupWithGoogleDTO, VerifyEmailDTO } from './dto/create-auth.dto';
-import { IUser } from 'src/common/interface';
+import type{ IAuthReq, IResponse, IUser } from 'src/common/interface';
 import { LoginResponse } from './entities/auth.entity';
 import { WatchInterceptor } from 'src/common/interceptor';
 import type { Request, Response } from 'express';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-  @Post('signup')
+    @Post('signup')
+    async signup(
+      @Body() body: SignupDTO,
+      @Req() req: IAuthReq,
+    ): Promise<IResponse<IUser>> {
 
-  async signup(
-    @Body() body: SignupDTO,
-  ) :Promise<IUser>{
-    console.log(body);
-    const user = await this.authService.signup(body);
-    return user;
-  }
-  @UseInterceptors(WatchInterceptor)
-  @HttpCode(HttpStatus.OK)
+      return await this.authService.signup(body, req.lang);
+    }
   @Post('login')
-  async login (
-    @Req() req : Request,
-    @Body()
-    body: LoginDTO,
-  ) : Promise<LoginResponse>{
-    console.log({lang : req.headers['accept-language']})
-    const credentials = await this.authService.login(body , `${req.protocol}://${req.get('host')}`)
-    return credentials;
-  }
+    @UseInterceptors(WatchInterceptor)
+    @HttpCode(HttpStatus.OK)
+    async login(
+      @Req() req: IAuthReq,
+      @Body() body: LoginDTO,
+    ): Promise<LoginResponse> {
+      return this.authService.login(
+        body,
+        `${req.protocol}://${req.get('host')}`,
+        req.lang,
+      );
+    }
   @Patch('confirm-email')
-  async confirmEmail(@Body() body:ConfirmEmailDTO):Promise<void>{
-      await this.authService.confirmEmail(body)
-      return ;
-  }
+    async confirmEmail(
+      @Body() body: ConfirmEmailDTO,
+      @Req() req: IAuthReq,
+    ): Promise<void> {
+      await this.authService.confirmEmail(body, req.lang);
+    }
 
-  @Patch('/resend-confirm-email')
-  async reSendConfirmEmail(@Body() body:ResendConfirmEmailDto):Promise<void>{
-      await this.authService.reSendConfirmEmail(body)
-      return ;
-  }
+  @Patch('resend-confirm-email')
+    async reSendConfirmEmail(
+      @Body() body: ResendConfirmEmailDto,
+      @Req() req: IAuthReq,
+    ): Promise<void> {
+      await this.authService.reSendConfirmEmail(body, req.lang);
+    }
 
   // Google 
-  @Post('signupWithGoogle')
-  async signupWithGoogle(
-    @Body() body: SignupWithGoogleDTO,
-    @Req() req:Request,
-    @Res({passthrough:true}) res : Response
-  )  :Promise<LoginResponse> {
-    const {account , status} = await this.authService.signupWithGmail(body.idToken ,`${req.protocol}://${req.get('host')}`);
-    res.status(status)
-    return account;
-  }
+    @Post('signupWithGoogle')
+    async signupWithGoogle(
+      @Body() body: SignupWithGoogleDTO,
+      @Req() req: IAuthReq,
+      @Res({ passthrough: true }) res: Response,
+    ): Promise<LoginResponse> {
+      const { account, status } =
+        await this.authService.signupWithGmail(
+          body.idToken,
+          `${req.protocol}://${req.get('host')}`,
+          req.lang,
+        );
+
+      res.status(status);
+      return account;
+    }
 
 
 
 
   // Forget Password 
 // ================== Forget Password ==================
-
     @Post('request-forgot-password-code')
     @HttpCode(HttpStatus.CREATED)
     async requestForgotPasswordCode(
       @Body() body: VerifyEmailDTO,
+      @Req() req: IAuthReq,
     ): Promise<void> {
-      await this.authService.requestForgotPasswordCode(body);
+      await this.authService.requestForgotPasswordCode(body, req.lang);
     }
 
     @Patch('verify-forgot-password-code')
-    @HttpCode(HttpStatus.OK)
-    async verifyForgotPasswordCode(
-      @Body() body: ConfirmEmailDTO,
-    ): Promise<void> {
-      await this.authService.verifyForgotPasswordCode(body);
-    }
+  @HttpCode(HttpStatus.OK)
+  async verifyForgotPasswordCode(
+    @Body() body: ConfirmEmailDTO,
+    @Req() req: IAuthReq,
+  ): Promise<void> {
+    await this.authService.verifyForgotPasswordCode(body, req.lang);
+  }
 
-    @Patch('reset-forgot-password-code')
+   @Patch('reset-forgot-password-code')
     @HttpCode(HttpStatus.OK)
     async resetForgotPasswordCode(
       @Body() body: ResetForgotPasswordDTO,
+      @Req() req: IAuthReq,
     ): Promise<void> {
-      await this.authService.resetForgotPasswordCode(body);
+      await this.authService.resetForgotPasswordCode(body, req.lang);
     }
 }

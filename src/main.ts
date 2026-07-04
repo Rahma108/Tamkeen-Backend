@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { LanguageInterceptor, TransformInterceptor, WatchInterceptor } from './common/interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,6 +16,9 @@ async function bootstrap() {
         forbidNonWhitelisted: false,
       }),
     );
+  // Interceptors 
+    app.useGlobalInterceptors(new WatchInterceptor() , new LanguageInterceptor() , new TransformInterceptor() )
+
 
 
   const port = config.get<number>('PORT') ?? 3000; 

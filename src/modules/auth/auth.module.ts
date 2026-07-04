@@ -18,9 +18,9 @@ import { defaultLanguage } from 'src/common/middleware';
   ],
 })
 export class AuthModule {
-   configure(consumer: MiddlewareConsumer) {
-      consumer
-        .apply(defaultLanguage )
-        .forRoutes(AuthController);
-    }
+  //  configure(consumer: MiddlewareConsumer) {
+  //     consumer
+  //       .apply(defaultLanguage )
+  //       .forRoutes(AuthController);
+  //   }
 }

@@ -13,7 +13,7 @@ export class WatchInterceptor implements NestInterceptor {
         .handle()
         .pipe(
             timeout(10000),
-                    catchError(err => {
+                catchError(err => {
                 if (err instanceof TimeoutError) {
                 return throwError(() => new RequestTimeoutException());
                 }
