@@ -49,7 +49,6 @@ export class AuthenticationGuard implements CanActivate {
         throw new Error('Invalid Authorization format');
     }
     req.credentials = await this.tokenService.decodeToken({ token  , tokenType });
-
     return true;
       
     } catch (error) {
@@ -57,3 +56,4 @@ export class AuthenticationGuard implements CanActivate {
     }
   }
 }
+

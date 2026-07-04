@@ -263,6 +263,7 @@ export class S3Service {
                 }
                 
             })
+            console.log({Keys})
             return await this.client.send(command)
 
     }
@@ -280,22 +281,30 @@ export class S3Service {
                 Prefix:`${this.APPLICATION_NAME}/${prefix}`
                 
             })
+            console.log("Bucket:", Bucket);
+            console.log("Prefix:", `${this.APPLICATION_NAME}/${prefix}`);
             return await this.client.send(command)
 
     }
 
-    async deleteFolderByPrefix({
-        Bucket = this.AWS_BUCKET_NAME ,
-        prefix 
-    }:{
-        Bucket?:string  ,
-        prefix : string 
-    }):Promise<DeleteObjectCommandOutput>{
-            const result = await this.listFolderDir({ Bucket , prefix })
-            const Keys = result.Contents?.map(ele => { return { Key :ele.Key} }) as {Key : string }[] 
-            return await this.deleteAssets({ Bucket , Keys })
+        async deleteFolderByPrefix({
+                Bucket = this.AWS_BUCKET_NAME,
+                prefix,
+                }: {
+                Bucket?: string;
+                prefix: string;
+                }) {
+                const result = await this.listFolderDir({ Bucket, prefix });
 
-    }
+                const keys =
+                    result.Contents?.map((item) => ({ Key: item.Key! })) ?? [];
 
 
-}
+                if (keys.length === 0) {
+                    return;
+                }
+
+                await this.deleteAssets({ Bucket, Keys: keys });
+                }
+
+        }

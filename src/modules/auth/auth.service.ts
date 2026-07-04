@@ -12,6 +12,8 @@ import { LoginResponse } from './entities/auth.entity';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { Translator } from 'src/common/i18n/translator';
 import { Language } from 'src/common/i18n/language.type';
+import { LogoutEnum } from 'src/common/enum/security.enum';
+import { HUserDocument } from 'src/common/model';
 
 
 @Injectable()
@@ -423,6 +425,9 @@ export class AuthService {
 
     return;
     }
+
+
+    
 
 
 }

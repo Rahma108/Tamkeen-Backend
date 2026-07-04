@@ -1,10 +1,14 @@
-import { Controller, Post, Body, Patch,HttpCode, HttpStatus, UseInterceptors, Req, Res } from '@nestjs/common';
+import { Controller, Post, Body, Patch,HttpCode, HttpStatus, UseInterceptors, Req, Res, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ConfirmEmailDTO, LoginDTO, ResendConfirmEmailDto, ResetForgotPasswordDTO, SignupDTO, SignupWithGoogleDTO, VerifyEmailDTO } from './dto/create-auth.dto';
 import type{ IAuthReq, IResponse, IUser } from 'src/common/interface';
 import { LoginResponse } from './entities/auth.entity';
 import { WatchInterceptor } from 'src/common/interceptor';
 import type { Request, Response } from 'express';
+import { Auth, User } from 'src/common/decorator';
+import { RoleEnum } from 'src/common/enum';
+import type{ HUserDocument } from 'src/common/model';
+import { LogoutDto } from '../user/dto/create-user.dto';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -94,4 +98,6 @@ export class AuthController {
     ): Promise<void> {
       await this.authService.resetForgotPasswordCode(body, req.lang);
     }
+
+
 }

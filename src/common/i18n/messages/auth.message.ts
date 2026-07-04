@@ -125,4 +125,9 @@ export const authMessage = {
     en: 'Failed to create account ❌',
     ar: 'فشل إنشاء الحساب ❌',
   },
+  ACCESS_TOKEN_STILL_VALID: {
+  en: 'Current access token is still valid ⏳',
+  ar: 'رمز الوصول الحالي ما زال صالحًا ⏳',
+},
+
 } as const;

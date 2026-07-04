@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseInterceptors, ParseFilePipe, UploadedFile, MaxFileSizeValidator } from '@nestjs/common';
 import { UserService } from './user.service';
 
 import { ChangeLanguageDto, UpdateUserDto } from './dto/update-user.dto';
@@ -7,10 +7,16 @@ import { Auth, User } from 'src/common/decorator';
 import type { HUserDocument } from 'src/common/model';
 
 import type { IAuthReq } from 'src/common/interface/auth.interface';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CloudMulter, fileFieldValidation } from 'src/common/utils/service';
+import type{ IFile, IUser } from 'src/common/interface';
+import { AuthService } from '../auth/auth.service';
+import { LogoutDto } from './dto/create-user.dto';
+import { TokenTypeEnum } from 'src/common/enum/security.enum';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService ) {}
 
   @Auth([RoleEnum.USER ])
   @Get()
@@ -34,6 +40,66 @@ export class UserController {
     ) {
       return this.userService.changeLanguage(user, dto);
     }
+
+      @UseInterceptors(FileInterceptor("attachment" , CloudMulter({ validation : fileFieldValidation.image  })) )
+      @Auth([RoleEnum.USER ])
+      @Patch("profile-image")
+      async profileImage(
+        @UploadedFile(new ParseFilePipe({fileIsRequired: true, validators: [new MaxFileSizeValidator({maxSize: 2 * 1024 * 1024 })] })) file :IFile,
+        @User() user:HUserDocument):Promise<IUser>{
+        return await this.userService.profileImage(file , user )
+        
+        }
+
+                    //Profile Refresh token 
+            @Auth([RoleEnum.USER] , TokenTypeEnum.refresh)
+            @Get('rotate')
+            async rotateToken(
+              @User() user: HUserDocument,
+              @Req() req: IAuthReq,
+            ) {
+              return await this.userService.rotateToken(
+                user,
+                req.credentials.decoded as { iat: number; jti: string; sub: string },
+                `${req.protocol}://${req.get('host')}`,
+                req.lang,
+              );
+            }
+    
+            // Logout
+            @Auth([RoleEnum.USER])
+            @Post('logout')
+            async logout(
+              @Body() body: LogoutDto,
+              @User() user: HUserDocument,
+              @Req() req: IAuthReq,
+            ) {
+              return await this.userService.logout(
+                body.flag,
+                user,
+                req.credentials.decoded as { iat: number; jti: string; sub: string },
+                req.lang,
+              );
+            }
+
+
+        // delete profile 
+        @Auth([RoleEnum.USER])
+        @Delete('profile')
+        
+        async deleteProfile(
+          @User() user:HUserDocument ,
+          @Req() req: IAuthReq
+        ){
+          return  await this.userService.deleteProfile( user , req.lang)
+        }
+    
+
+
+
+
+
+    
 
   @Get()
   findAll() {

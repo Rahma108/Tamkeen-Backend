@@ -10,6 +10,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SharedAuthenticationModule } from './common/modules';
 import { CacheModule } from '@nestjs/cache-manager';
+import { S3Service } from './common/utils/service';
 
 @Module({
   imports: [
@@ -40,6 +41,6 @@ import { CacheModule } from '@nestjs/cache-manager';
     AnswersModule 
   ],
   controllers: [AppController ],
-  providers: [AppService],
+  providers: [AppService , S3Service],
 })
 export class AppModule {}
