@@ -16,6 +16,13 @@ export class Translator {
     return messages.user[key][lang];
   }
 
+  static cv(
+    key: keyof typeof messages.cv,
+    lang: Language = 'en',
+  ) {
+    return messages.cv[key][lang];
+  }
+
   static validation(
     key: keyof typeof messages.validation,
     lang: Language = 'en',

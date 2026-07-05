@@ -1,5 +1,5 @@
 
-import { CompleteMultipartUploadCommandOutput, DeleteObjectCommand, DeleteObjectCommandOutput, DeleteObjectsCommand, DeleteObjectsCommandOutput, GetObjectCommand, GetObjectCommandOutput, ListObjectsV2Command, ListObjectsV2CommandOutput, ObjectCannedACL, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { CompleteMultipartUploadCommandOutput, DeleteObjectCommand, DeleteObjectCommandOutput, DeleteObjectsCommand, DeleteObjectsCommandOutput, GetObjectCommand, GetObjectCommandOutput, HeadObjectCommand, ListObjectsV2Command, ListObjectsV2CommandOutput, ObjectCannedACL, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
 import { createReadStream } from 'node:fs';
 import { Upload } from '@aws-sdk/lib-storage';
@@ -8,6 +8,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { StorageApproachEnum, UploadApproachEnum } from "../../enum/multer.enum";
 import { Express } from "express";
+import { extname } from "node:path";
 
 @Injectable()
 export class S3Service {
@@ -159,30 +160,48 @@ export class S3Service {
     }
 
     async createPreSignedUploadLink({
-        Bucket = this.AWS_BUCKET_NAME     ,
-        path ="general" ,
-        expiresIn = this.AWS_EXPIRES_IN,
-        ContentType ,
-        Originalname 
-    }:{
-        Bucket?:string  ,
-        path?:string ,
-        expiresIn?:number
-        ContentType:string | undefined,
-        Originalname: string
-    }):Promise<{url : string , Key : string }>{
-        const command = new PutObjectCommand({
-            Bucket ,
-            Key: `${this.APPLICATION_NAME}/${path}/${randomUUID()}__${Originalname}` ,
-            ContentType
+            Bucket = this.AWS_BUCKET_NAME,
+            Key,
+            expiresIn = this.AWS_EXPIRES_IN,
+            ContentType,
+        }: {
+            Bucket?: string;
+            Key: string;
+            expiresIn?: number;
+            ContentType?: string;
+        }): Promise<{ url: string; Key: string }> {
 
-        })
-        if(!command.input?.Key){
-            throw new BadRequestException("Fail to Upload this asset")
+            const command = new PutObjectCommand({
+                Bucket,
+                Key,
+                ContentType,
+            });
+
+            const url = await getSignedUrl(this.client, command, {
+                expiresIn,
+    });
+
+    return {
+        url,
+        Key,
+    };
+}
+    
+        generateKey({
+        folder,
+        userId,
+        originalName,
+        }: {
+        folder: string;
+        userId?: string;
+        originalName: string;
+        }): string {
+        const extension = extname(originalName);
+
+        return `${this.APPLICATION_NAME}/${folder}${
+            userId ? `/${userId}` : ""
+        }/${randomUUID()}${extension}`;
         }
-        const url = await getSignedUrl(this.client , command , {expiresIn} )
-        return {url ,Key : command.input.Key as string }
-    }
     async getAsset({
         Bucket = this.AWS_BUCKET_NAME ,
         Key 
@@ -307,4 +326,34 @@ export class S3Service {
                 await this.deleteAssets({ Bucket, Keys: keys });
                 }
 
+        async exists({
+            Bucket = this.AWS_BUCKET_NAME,
+            Key,
+            }: {
+            Bucket?: string;
+            Key: string;
+            }): Promise<boolean> {
+            try {
+                const command = new HeadObjectCommand({
+                Bucket,
+                Key,
+                });
+
+                await this.client.send(command);
+
+                return true;
+            } catch (error: any) {
+                if (
+                error?.name === "NotFound" ||
+                error?.$metadata?.httpStatusCode === 404
+                ) {
+                return false;
+                }
+
+                throw error;
+            }
+            }
+
         }
+
+        

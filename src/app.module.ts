@@ -11,6 +11,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SharedAuthenticationModule } from './common/modules';
 import { CacheModule } from '@nestjs/cache-manager';
 import { S3Service } from './common/utils/service';
+import { CvModule } from './modules/cv/cv.module';
 
 @Module({
   imports: [
@@ -38,7 +39,8 @@ import { S3Service } from './common/utils/service';
     UserModule,
     JobModule,
     QuestionsModule ,
-    AnswersModule 
+    AnswersModule,
+    CvModule 
   ],
   controllers: [AppController ],
   providers: [AppService , S3Service],

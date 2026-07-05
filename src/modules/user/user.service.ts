@@ -130,7 +130,6 @@ export class UserService {
             prefix: `Users/${user._id}`,
           });
         } catch (error) {
-          // سجلي الخطأ فقط
           console.error("S3 delete failed:", error);
         }
 
