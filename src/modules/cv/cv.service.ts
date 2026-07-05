@@ -43,38 +43,31 @@ export class CvService {
           key,
         };
       }
+    //    POST   /cvs                // Process PDF + Save DB
+    async create(
+        body: CreateCvDto,
+        user: HUserDocument,
+        lang: LangEnum,
+    ) {
+
+      // 1- Download PDF from S3
+
+      // 2- Extract Text
+
+      // 3- AI Analysis
+
+      // 4- Save Database
+
+    }
+
+    // GET    /cv                 // Get all CVs
+
+    // GET    /cv/:id             // Get one CV
+
+    // PATCH  /cv/:id             // Update
+
+    // DELETE /cv/:id             // Delete
+    
 
 
-
-
-
-
-    // POST /cvs             لتحقق من الملف، استخراج النص، إنشاء سجل الـ CV
-
-    // GET /cv
-
-    // GET /cv/:id
-
-    // PATCH /cv/:id
-
-    // DELETE /cv/:id
-  create(createCvDto: CreateCvDto) {
-    return 'This action adds a new cv';
-  }
-
-  findAll() {
-    return `This action returns all cv`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} cv`;
-  }
-
-  update(id: number, updateCvDto: UpdateCvDto) {
-    return `This action updates a #${id} cv`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} cv`;
-  }
 }

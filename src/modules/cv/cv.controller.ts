@@ -26,25 +26,19 @@ export class CvController {
       user,
       req.lang as LangEnum,
     );
-  }
 
-  @Get()
-  findAll() {
-    return this.cvService.findAll();
   }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.cvService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCvDto: UpdateCvDto) {
-    return this.cvService.update(+id, updateCvDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.cvService.remove(+id);
-  }
+  @Auth([RoleEnum.USER])
+    @Post()
+    create(
+      @Body() body: CreateCvDto,
+      @User() user: HUserDocument,
+      @Req() req: IAuthReq,
+    ) {
+      return this.cvService.create(
+        body,
+        user,
+        req.lang as LangEnum,
+      );
+    }
 }

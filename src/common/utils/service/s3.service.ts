@@ -202,24 +202,24 @@ export class S3Service {
             userId ? `/${userId}` : ""
         }/${randomUUID()}${extension}`;
         }
-    async getAsset({
-        Bucket = this.AWS_BUCKET_NAME ,
-        Key 
-    }:{
-        Bucket?:string  ,
-        Key : string
-    }):Promise<GetObjectCommandOutput>{
-            const command =  new GetObjectCommand({
-                Bucket ,
-                Key 
-                
-            })
-            if(!command.input?.Key){
-                    throw new BadRequestException("Fail to Upload this asset")
-                }
-            return await this.client.send(command)
+        async getAsset({
+            Bucket = this.AWS_BUCKET_NAME ,
+            Key 
+        }:{
+            Bucket?:string  ,
+            Key : string
+        }):Promise<GetObjectCommandOutput>{
+                const command =  new GetObjectCommand({
+                    Bucket ,
+                    Key 
+                    
+                })
+                if(!command.input?.Key){
+                        throw new BadRequestException("Fail to Upload this asset")
+                    }
+                return await this.client.send(command)
 
-    }
+        }
 
 
     async createPreSignedFetchLink({

@@ -1,7 +1,10 @@
-import { IsString } from "class-validator";
+import { IsNotEmpty, IsString } from "class-validator";
 
-export class CreateCvDto {}
-
+export class CreateCvDto {
+  @IsString()
+  @IsNotEmpty()
+  key!: string;
+}
 export class CreateUploadUrlDto {
     @IsString()
     fileName!: string;
