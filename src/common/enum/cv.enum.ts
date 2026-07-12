@@ -1,5 +1,6 @@
 export enum CVStatusEnum {
-    PROCESSING= "PROCESSING",
-    READY="READY",
-    FAILED="FAILED"
+    UPLOADED = 'uploaded',
+    PROCESSING = 'processing',
+    COMPLETED = 'completed',
+    FAILED = 'failed',
 }

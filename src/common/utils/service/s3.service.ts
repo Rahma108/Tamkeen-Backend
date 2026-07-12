@@ -203,66 +203,70 @@ export class S3Service {
         }/${randomUUID()}${extension}`;
         }
         async getAsset({
-            Bucket = this.AWS_BUCKET_NAME ,
-            Key 
-        }:{
-            Bucket?:string  ,
-            Key : string
-        }):Promise<GetObjectCommandOutput>{
-                const command =  new GetObjectCommand({
-                    Bucket ,
-                    Key 
-                    
-                })
-                if(!command.input?.Key){
-                        throw new BadRequestException("Fail to Upload this asset")
-                    }
-                return await this.client.send(command)
+            Bucket = this.AWS_BUCKET_NAME,
+            Key,
+        }: {
+            Bucket?: string;
+            Key: string;
+        }): Promise<GetObjectCommandOutput> {
 
+            if (!Key.trim()) {
+                throw new BadRequestException("Asset key is required");
+            }
+
+            try {
+                const command = new GetObjectCommand({
+                    Bucket,
+                    Key,
+                });
+
+                return await this.client.send(command);
+            } catch (error) {
+                throw new BadRequestException("Failed to get asset");
+            }
         }
 
+            async createPreSignedFetchLink({
+                Bucket = this.AWS_BUCKET_NAME ,
+                Key ,
+                expiresIn =this.AWS_EXPIRES_IN,
+                fileName ,
+                download
+            }:{
+                Bucket?:string  ,
+                Key?:string ,
+                expiresIn?:number,
+                fileName?:string ,
+                download?:string
+            }):Promise<string>{
+                const command = new GetObjectCommand({
+                    Bucket ,
+                    Key ,
+                    ResponseContentDisposition: download === "true" ?
+                    `attachment; filename="${fileName || Key?.split("/").pop()}"` : undefined
 
-    async createPreSignedFetchLink({
-        Bucket = this.AWS_BUCKET_NAME ,
-        Key ,
-        expiresIn =this.AWS_EXPIRES_IN,
-        fileName ,
-        download
-    }:{
-        Bucket?:string  ,
-        Key?:string ,
-        expiresIn?:number,
-        fileName?:string ,
-        download?:string
-    }):Promise<string>{
-        const command = new GetObjectCommand({
-            Bucket ,
-            Key ,
-            ResponseContentDisposition: download === "true" ?
-            `attachment; filename="${fileName || Key?.split("/").pop()}"` : undefined
-
-        })
-        const url = await getSignedUrl(this.client , command , {expiresIn} )
-        return  url 
-    }
+                })
+                const url = await getSignedUrl(this.client , command , {expiresIn} )
+                return  url 
+            }
 
 
-    async deleteAsset({
-        Bucket = this.AWS_BUCKET_NAME ,
-        Key 
-    }:{
-        Bucket?:string  ,
-        Key : string
-    }):Promise<DeleteObjectCommandOutput>{
-            const command =  new DeleteObjectCommand({
-                Bucket ,
+            async deleteAsset({
+                Bucket = this.AWS_BUCKET_NAME ,
                 Key 
-                
-            })
-            if(!command.input?.Key){
-                    throw new BadRequestException("Fail to Upload this asset")
-                }
-            return await this.client.send(command)
+            }:{
+                            Bucket?:string  ,
+                    Key : string
+                }):Promise<DeleteObjectCommandOutput>{
+                        const command =  new DeleteObjectCommand({
+                            Bucket ,
+                            Key 
+                            
+                        })
+                        if(!command.input?.Key){
+                                throw new BadRequestException("Fail to Upload this asset")
+                            }
+                        return await this.client.send(command)
 
     }
 
