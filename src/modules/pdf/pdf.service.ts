@@ -12,7 +12,8 @@ export class PdfService {
       }
 
       return data.text;
-    } catch {
+    } catch(error) {
+      console.error('PDF extraction error:', error);
       throw new BadRequestException('Failed to extract PDF text');
     }
   }

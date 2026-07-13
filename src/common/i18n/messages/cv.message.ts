@@ -57,6 +57,28 @@ export const cvMessage = {
     en: "You are not allowed to access this CV ❌",
     ar: "غير مصرح لك بالوصول إلى هذه السيرة الذاتية ❌",
   },
+
+    GET_ALL_SUCCESS: {
+    en: 'CVs retrieved successfully.',
+    ar: 'تم جلب السير الذاتية بنجاح.',
+  },
+
+  GET_ONE_SUCCESS: {
+    en: 'CV retrieved successfully.',
+    ar: 'تم جلب السيرة الذاتية بنجاح.',
+  },
+
+  CV_UPDATED_SUCCESSFULLY: {
+    en: 'CV updated successfully.',
+    ar: 'تم تحديث السيرة الذاتية بنجاح.',
+  },
+
+  CV_DELETED_SUCCESSFULLY: {
+    en: 'CV deleted successfully.',
+    ar: 'تم حذف السيرة الذاتية بنجاح.',
+  },
+
+
 } as const;
 
 export type CvMessageKey = keyof typeof cvMessage;
