@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateProfileImageUploadUrlDto, CreateUserDto } from './dto/create-user.dto';
 import { ChangeLanguageDto, UpdateUserDto } from './dto/update-user.dto';
 import type{ HUserDocument } from 'src/common/model/user.model';
 import { Translator } from 'src/common/i18n/translator';
@@ -10,6 +10,8 @@ import { Language } from 'src/common/i18n/language.type';
 import { LoginResponse } from '../auth/entities/auth.entity';
 import { LogoutEnum } from 'src/common/enum/security.enum';
 import { ConfigService } from '@nestjs/config';
+import { HydratedDocument } from 'mongoose';
+
 
 @Injectable()
 export class UserService {
@@ -41,16 +43,92 @@ export class UserService {
         message: Translator.user('LANGUAGE_UPDATED', dto.lang),
       };
     }
-      async profileImage(file: IFile , user: HUserDocument): Promise<IUser>{
-          const oldImage = user.profileImage ;
-          user.profileImage = await this.s3Service.uploadAsset({file , path : `Users/${user._id.toString()}`})
-          await user.save();
-          if(oldImage){
-            await this.s3Service.deleteAsset({Key : oldImage })
-          }
-          return user.toJSON()
+      // async profileImage(file: IFile , user: HUserDocument): Promise<IUser>{
+      //     const oldImage = user.profileImage ;
+      //     user.profileImage = await this.s3Service.uploadAsset({file , path : `Users/${user._id.toString()}`})
+      //     await user.save();
+      //     if(oldImage){
+      //       await this.s3Service.deleteAsset({Key : oldImage })
+      //     }
+      //     return user.toJSON()
 
-      }
+      // }
+
+
+      // 1 , 2 
+    async profileImageWithPreSignedLink(
+    {
+      contentType,
+      originalName,
+    }: CreateProfileImageUploadUrlDto,
+    user: HUserDocument,
+    lang: Language,
+  ): Promise<{ url: string; key: string; message: string }> {
+
+    const key = this.s3Service.generateKey({
+      folder: 'Users/profile',
+      userId: user._id.toString(),
+      originalName,
+    });
+
+    const { url } = await this.s3Service.createPreSignedUploadLink({
+      Key: key,
+      ContentType: contentType,
+    });
+
+    return {
+      url,
+      key,
+      message: Translator.user('UPLOAD_URL_CREATED', lang),
+    };
+  }
+
+      
+    async updateProfileImage(
+    profileImage: string,
+    user: HUserDocument,
+    lang: Language,
+  ): Promise<{ message: string; user: IUser }> {
+
+    const oldImage = user.profileImage;
+
+    user.profileImage = profileImage;
+
+    await user.save();
+
+    if (oldImage) {
+      await this.s3Service.deleteAsset({
+        Key: oldImage,
+      });
+    }
+
+    return {
+      message: Translator.user("PROFILE_IMAGE_UPDATED", lang),
+      user: user.toJSON(),
+    };
+  }
+
+async deleteProfileImage(
+  user: HUserDocument,
+  lang: Language,
+): Promise<{ message: string; user: IUser }> {
+
+  if (user.profileImage) {
+    await this.s3Service.deleteAsset({
+      Key: user.profileImage,
+    });
+  }
+
+  user.profileImage = undefined;
+
+  await user.save();
+
+  return {
+    message: Translator.user("PROFILE_IMAGE_DELETED", lang),
+    user: user.toJSON(),
+  };
+}
+
     async createRevokeToken( { userId ,jti , ttl  }: { userId:string ,jti:string , ttl:number  }){
     await this.redis.set({
                 key: this.redis.revokeTokenKey({userId , jti}),

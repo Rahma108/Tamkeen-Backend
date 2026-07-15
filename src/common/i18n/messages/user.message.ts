@@ -40,7 +40,16 @@ export const userMessage = {
   ACCOUNT_NOT_FOUND:{
     en :"Account not found ❌" ,
     ar:"الحساب غير موجود ❌"
-  }
+  } ,
+  UPLOAD_URL_CREATED: {
+    en: "Upload URL created successfully✅",
+    ar: "تم إنشاء رابط الرفع بنجاح✅",
+  },
+PROFILE_IMAGE_DELETED: {
+  en: "Profile image deleted successfully✅",
+  ar: "تم حذف صورة الملف الشخصي بنجاح✅",
+},
+
 
 
 

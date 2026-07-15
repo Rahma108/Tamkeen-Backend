@@ -7,3 +7,15 @@ export class LogoutDto {
   @IsEnum(LogoutEnum)
   flag!: LogoutEnum;
 }
+
+import { IsNotEmpty, IsString } from 'class-validator';
+
+export class CreateProfileImageUploadUrlDto {
+  @IsString()
+  @IsNotEmpty()
+  contentType!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  originalName!: string;
+}
