@@ -28,6 +28,10 @@ export const validationMessage = {
     en: 'Invalid OTP',
     ar: 'رمز التحقق غير صحيح',
   },
+  FILE_SIZE_EXCEEDED:{
+    en: "Image size must not exceed 2 MB.",
+    ar: "حجم الصورة يجب ألا يتجاوز 2 ميجابايت.",
+  }
 } as const;
 
 export type ValidationMessageKey = keyof typeof validationMessage;

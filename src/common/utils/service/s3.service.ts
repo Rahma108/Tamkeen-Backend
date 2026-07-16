@@ -7,7 +7,6 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { StorageApproachEnum, UploadApproachEnum } from "../../enum/multer.enum";
-import { Express } from "express";
 import { extname } from "node:path";
 
 @Injectable()

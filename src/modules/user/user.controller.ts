@@ -1,16 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseInterceptors, ParseFilePipe, UploadedFile, MaxFileSizeValidator } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseInterceptors, ParseFilePipe, UploadedFile, MaxFileSizeValidator, BadRequestException } from '@nestjs/common';
 import { UserService } from './user.service';
-
 import { ChangeLanguageDto, UpdateProfileImageDto, UpdateUserDto } from './dto/update-user.dto';
 import { RoleEnum } from 'src/common/enum/user.enum';
 import { Auth, User } from 'src/common/decorator';
 import type { HUserDocument } from 'src/common/model';
-
 import type { IAuthReq } from 'src/common/interface/auth.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudMulter, fileFieldValidation } from 'src/common/utils/service';
 import type{ IFile, IUser } from 'src/common/interface';
-import { AuthService } from '../auth/auth.service';
 import { CreateProfileImageUploadUrlDto, LogoutDto } from './dto/create-user.dto';
 import { TokenTypeEnum } from 'src/common/enum/security.enum';
 
@@ -41,15 +38,20 @@ export class UserController {
       return this.userService.changeLanguage(user, dto);
     }
 
-      // @UseInterceptors(FileInterceptor("attachment" , CloudMulter({ validation : fileFieldValidation.image  })) )
-      // @Auth([RoleEnum.USER ])
-      // @Patch("profile-image")
-      // async profileImage(
-      //   @UploadedFile(new ParseFilePipe({fileIsRequired: true, validators: [new MaxFileSizeValidator({maxSize: 2 * 1024 * 1024 })] })) file :IFile,
-      //   @User() user:HUserDocument):Promise<IUser>{
-      //   return await this.userService.profileImage(file , user )
+      @UseInterceptors(FileInterceptor("attachment" , CloudMulter({ validation : fileFieldValidation.image  })) )
+      @Auth([RoleEnum.USER ])
+      @Patch("profile-image")
+      async profileImage(
+        @UploadedFile(new ParseFilePipe({fileIsRequired: true, 
+          validators: [new MaxFileSizeValidator({maxSize: 2 * 1024 * 1024 })] , 
+        exceptionFactory: () => {
+              throw new BadRequestException("Image size must not exceed 2 MB.");
+            }
+      })) file :IFile,
+        @User() user:HUserDocument):Promise<IUser>{
+        return await this.userService.profileImage(file , user )
         
-      //   }
+        }
 
 
         //1-  POST /users/profile/upload-url
@@ -74,7 +76,7 @@ export class UserController {
         //3-  PATCH /users/profile-image
 
       @Auth([RoleEnum.USER])
-      @Patch("profile-image")
+      @Patch("profile-image/upload-url")
       async updateProfileImage(
         @Body() body: UpdateProfileImageDto,
         @User() user: HUserDocument,

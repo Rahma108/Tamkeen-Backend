@@ -43,16 +43,16 @@ export class UserService {
         message: Translator.user('LANGUAGE_UPDATED', dto.lang),
       };
     }
-      // async profileImage(file: IFile , user: HUserDocument): Promise<IUser>{
-      //     const oldImage = user.profileImage ;
-      //     user.profileImage = await this.s3Service.uploadAsset({file , path : `Users/${user._id.toString()}`})
-      //     await user.save();
-      //     if(oldImage){
-      //       await this.s3Service.deleteAsset({Key : oldImage })
-      //     }
-      //     return user.toJSON()
+      async profileImage(file: IFile , user: HUserDocument): Promise<IUser>{
+          const oldImage = user.profileImage ;
+          user.profileImage = await this.s3Service.uploadAsset({file , path : `Users/${user._id.toString()}`})
+          await user.save();
+          if(oldImage){
+            await this.s3Service.deleteAsset({Key : oldImage })
+          }
+          return user.toJSON()
 
-      // }
+      }
 
 
       // 1 , 2 
@@ -70,12 +70,12 @@ export class UserService {
       userId: user._id.toString(),
       originalName,
     });
+    console.log(key);
 
     const { url } = await this.s3Service.createPreSignedUploadLink({
       Key: key,
       ContentType: contentType,
     });
-
     return {
       url,
       key,
