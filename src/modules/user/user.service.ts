@@ -192,7 +192,7 @@ async deleteProfileImage(
 
       // delete profile 
       
-     async deleteProfile(user: HUserDocument, lang: Language) {
+      async deleteProfile(user: HUserDocument, lang: Language) {
         const account = await this.userRepository.deleteOne({
           filter: { _id: user._id, force: true },
         });
@@ -221,37 +221,4 @@ async deleteProfileImage(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
-  }
-
-
-  findAll() {
-    return `This action returns all user`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
-
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
-  }
 }
