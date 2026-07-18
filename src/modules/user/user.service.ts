@@ -1,16 +1,15 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateProfileImageUploadUrlDto, CreateUserDto } from './dto/create-user.dto';
-import { ChangeLanguageDto, UpdateUserDto } from './dto/update-user.dto';
+import { CreateProfileImageUploadUrlDto } from './dto/create-user.dto';
+import { ChangeLanguageDto } from './dto/update-user.dto';
 import type{ HUserDocument } from 'src/common/model/user.model';
 import { Translator } from 'src/common/i18n/translator';
 import { CacheService, S3Service, TokenService } from 'src/common/utils/service';
 import type { IFile, IUser } from 'src/common/interface';
-import { UserRepository } from 'src/common/repository';
 import { Language } from 'src/common/i18n/language.type';
 import { LoginResponse } from '../auth/entities/auth.entity';
 import { LogoutEnum } from 'src/common/enum/security.enum';
 import { ConfigService } from '@nestjs/config';
-import { HydratedDocument } from 'mongoose';
+import { UserRepository } from 'src/common/repository';
 
 
 @Injectable()

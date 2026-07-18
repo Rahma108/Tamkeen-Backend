@@ -222,7 +222,7 @@ async findOne({
         options?: MongooseUpdateQueryOptions<TRawDocument>
     } 
     ):Promise<UpdateWriteOpResult>{
-        return await this.model.updateOne(filter ,{...update , $incr:{_v: 1}} , options )
+        return await this.model.updateOne(filter ,{...update , $inc:{__v: 1}} , options )
     }
 
     async updateMany({
@@ -235,7 +235,7 @@ async findOne({
         options?: MongooseUpdateQueryOptions<TRawDocument>
     } 
     ):Promise<UpdateWriteOpResult>{
-        return await this.model.updateMany(filter , {...update , $incr:{_v: 1}} , options )
+        return await this.model.updateMany(filter , {...update , $inc:{__v: 1}} , options )
     }
 
     async deleteOne({
@@ -265,7 +265,7 @@ async findOneAndUpdate({ filter = {}, update, options } : {
     if (Array.isArray(update)) {
         return await this.model.findOneAndUpdate(
             filter,
-            [...update, { $set: { __v: { $add: ["$__v", 1] } } }], 
+            [...update, { $set: { ___v: { $add: ["$___v", 1] } } }], 
             { ...options, new: true , updatePipeline: true }           
         )
     }
@@ -277,21 +277,21 @@ async findOneAndUpdate({ filter = {}, update, options } : {
     )
 }
 
-  async findByAndUpdate({
+    async findByAndUpdate({
     _id,
     update,
     options,
-  }: {
+    }: {
     _id: Types.ObjectId;
     update: UpdateQuery<TRawDocument> | UpdateWithAggregationPipeline;
-    options?: MongooseUpdateQueryOptions<TRawDocument>;
-  }): Promise<HydratedDocument<TRawDocument> | null> {
+    options?: QueryOptions<TRawDocument>;
+    }): Promise<HydratedDocument<TRawDocument> | null> {
     return await this.model.findByIdAndUpdate(
-      _id,
-      { ...update, $incr: { _v: 1 } },
-      options,
+        _id,
+        { ...update, $inc: { __v: 1 } },
+        { ...options, new: true },
     );
-  }
+    }
 
   async findOneAndDelete({
     filter = {},

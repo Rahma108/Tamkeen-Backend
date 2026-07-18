@@ -45,6 +45,9 @@ lerna-debug.log*
 .env.production
 .env.*
 
+# Firebase Service Account
+src/config/*.json
+
 # temp directory
 .temp
 .tmp
